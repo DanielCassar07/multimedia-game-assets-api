@@ -23,7 +23,7 @@ A RESTful API for managing game assets including sprites, audio files, and playe
 3. Activate the environment: `source env/bin/activate`
 4. Install dependencies: `pip install -r requirements.txt`
 5. Create a `.env` file with your MongoDB connection string
-6. Run the API: `uvicorn main:app --reload --port 8080` (port 8000 I was having issues)
+6. Run the API: uvicorn main:app --reload
 
 ## API Endpoints
 - `/sprites` - Manage game sprites
