@@ -4,6 +4,7 @@ from bson import ObjectId
 from config import scores_collection
 from pydantic import BaseModel, Field
 from security import APIKeyHeader
+import re
 
 # Get API key dependency
 api_key_header = APIKeyHeader()
@@ -24,7 +25,7 @@ async def add_score(score: ScoreInput = Body(...), api_key: str = Depends(api_ke
     """Add a new player score to the database"""
     try:
         # Input validation to prevent injection attacks
-        if not score.player_name.replace("_", "").isalnum():
+        if not re.match(r'^[a-zA-Z0-9_]+$', score.player_name):
             raise HTTPException(status_code=400, 
                               detail="Player name can only contain alphanumeric characters and underscores")
         
