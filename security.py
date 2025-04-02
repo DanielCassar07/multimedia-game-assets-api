@@ -1,14 +1,16 @@
 from fastapi import Request, HTTPException, Depends
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from fastapi.responses import JSONResponse
 import os
 from dotenv import load_dotenv
-from typing import Optional
+from typing import Optional, Dict, Any, List
 import time
 import re
 
+# Load environment variables
 load_dotenv()
 
-# Simple API key validation
+# Get API key from environment
 API_KEY = os.getenv("API_KEY", "test_api_key")
 
 class APIKeyHeader(HTTPBearer):
@@ -58,9 +60,19 @@ class RateLimiter:
         # Add current request timestamp
         self.request_history[ip_address].append(current_time)
         return True
-            
+
+def log_injection_attempt(url_path: str, body_str: str = None):
+    """Log potential injection attempts for demonstration purposes"""
+    with open("injection_attempts.log", "a") as f:
+        f.write(f"Timestamp: {time.time()}\n")
+        f.write(f"URL: {url_path}\n")
+        if body_str:
+            f.write(f"Body: {body_str}\n")
+        f.write("---\n")
+    print(f"Potential injection attempt logged: {url_path}")
+
 # Input sanitization for MongoDB
-def sanitize_mongo_query(query_dict: dict) -> dict:
+def sanitize_mongo_query(query_dict: Dict[str, Any]) -> Dict[str, Any]:
     """Sanitize MongoDB query to prevent NoSQL injection"""
     if not isinstance(query_dict, dict):
         return query_dict

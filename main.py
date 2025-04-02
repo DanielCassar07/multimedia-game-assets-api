@@ -2,10 +2,10 @@ from fastapi import FastAPI, HTTPException, Depends, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 import os
+import re
 from routes import router
 from config import client
-from security import RateLimiter
-import re
+from security import RateLimiter, log_injection_attempt
 
 app = FastAPI(
     title="Multimedia Game Assets API",
@@ -50,20 +50,14 @@ async def security_middleware(request: Request, call_next):
         r'\$regex',
         r'\$exists',
         r'\.\.\/',
-        r'\/\.\.',
-        r'\$where',
-        r'\$ne',
-        r'\$gt',
-        r'\$lt',
-        r'\$regex',
-        r'\$exists',
-        r'\.\.\/',
         r'\/\.\.', 
         r';'
     ]
     
     for pattern in suspicious_patterns:
         if re.search(pattern, url_path, re.IGNORECASE):
+            # Log injection attempt
+            log_injection_attempt(url_path)
             return JSONResponse(
                 status_code=400,
                 content={"detail": "Potential security threat detected in request"}
