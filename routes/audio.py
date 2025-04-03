@@ -16,11 +16,12 @@ router = APIRouter(
 @router.post("/", response_description="Upload a new audio file")
 async def upload_audio(file: UploadFile = File(...), api_key: str = Depends(api_key_header)):
     """
-    Upload an audio file and store its metadata in the database.
+    Uploads an audio file and stores its metadata.
     
-    In a production environment, the file would be stored in a file storage service
-    like AWS S3, and only the metadata would be stored in MongoDB.
-    For this assignment, we'll simulate this by storing the file information.
+    Security: Requires API key, validates file extension
+    
+    Database Operation: insert_one() to audio_collection
+    Returns the inserted document's ID and metadata
     """
     try:
         # Read file content (in production, you'd upload to S3 or similar)
@@ -63,7 +64,14 @@ async def upload_audio(file: UploadFile = File(...), api_key: str = Depends(api_
 
 @router.get("/", response_description="List all audio files")
 async def list_audio_files():
-    """List all audio files in the database"""
+    """
+    Retrieves all audio assets from the database.
+    
+    Database Interaction:
+    - Queries audio_collection with find() (no filter)
+    - Converts cursor to list (max 1000 documents)
+    - Converts ObjectIds to strings for JSON serialization
+    """
     audio_files = await audio_collection.find().to_list(1000)
     # Convert ObjectId to string for each audio file
     for audio in audio_files:
@@ -72,7 +80,14 @@ async def list_audio_files():
 
 @router.get("/{id}", response_description="Get a single audio file by ID")
 async def get_audio_file(id: str):
-    """Get a specific audio file by its ID"""
+    """
+    Retrieves a specific audio file by ID.
+    
+    Database Interaction:
+    - Validates ObjectId format for security
+    - Uses find_one() with filter {"_id": ObjectId(id)}
+    - Returns 404 if no document found
+    """
     try:
         # Validate ObjectId format
         if not ObjectId.is_valid(id):
@@ -91,7 +106,15 @@ async def get_audio_file(id: str):
 
 @router.delete("/{id}", response_description="Delete an audio file")
 async def delete_audio_file(id: str, api_key: str = Depends(api_key_header)):
-    """Delete an audio file by its ID"""
+    """
+    Deletes an audio file by its ID.
+    
+    Security: Requires API key, validates ID format
+    
+    Database Operation: 
+    - Uses delete_one() with filter {"_id": ObjectId(id)}
+    - Verifies deletion by checking deleted_count
+    """
     try:
         # Validate ObjectId format
         if not ObjectId.is_valid(id):

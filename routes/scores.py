@@ -22,7 +22,14 @@ class ScoreInput(BaseModel):
 
 @router.post("/", response_description="Add a new player score")
 async def add_score(score: ScoreInput = Body(...), api_key: str = Depends(api_key_header)):
-    """Add a new player score to the database"""
+    """
+    Adds a new player score to the database.
+    
+    Security: Requires API key, validates input with Pydantic model
+    
+    Database Operation: insert_one() to scores_collection with sanitized data
+    Returns the inserted document's ID
+    """
     try:
         # Input validation to prevent injection attacks
         if not re.match(r'^[a-zA-Z0-9_]+$', score.player_name):
@@ -47,7 +54,14 @@ async def add_score(score: ScoreInput = Body(...), api_key: str = Depends(api_ke
 
 @router.get("/", response_description="List all player scores")
 async def list_scores():
-    """List all player scores in the database"""
+    """
+    Retrieves all player scores from the database.
+    
+    Database Interaction:
+    - Queries scores_collection with find() (no filter)
+    - Converts cursor to list (max 1000 documents)
+    - Converts ObjectIds to strings for JSON serialization
+    """
     scores = await scores_collection.find().to_list(1000)
     # Convert ObjectId to string for each score
     for score in scores:
@@ -56,7 +70,14 @@ async def list_scores():
 
 @router.get("/top/{limit}", response_description="Get top player scores")
 async def get_top_scores(limit: int = 10):
-    """Get the top player scores, limited by the specified number"""
+    """
+    Retrieves top-scoring players.
+    
+    Database Interaction:
+    - Queries scores_collection with find()
+    - Sorts by score in descending order (-1)
+    - Limits to specified number of results
+    """
     if limit < 1:
         raise HTTPException(status_code=400, detail="Limit must be a positive integer")
         
@@ -68,7 +89,14 @@ async def get_top_scores(limit: int = 10):
 
 @router.get("/{id}", response_description="Get a single player score by ID")
 async def get_score(id: str):
-    """Get a specific player score by its ID"""
+    """
+    Retrieves a specific player score by ID.
+    
+    Database Interaction:
+    - Validates ObjectId format for security
+    - Uses find_one() with filter {"_id": ObjectId(id)}
+    - Returns 404 if no document found
+    """
     try:
         # Validate ObjectId format
         if not ObjectId.is_valid(id):
